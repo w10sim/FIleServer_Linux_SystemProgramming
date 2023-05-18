@@ -18,7 +18,7 @@ int create_web_server()
     case -1:
         printf("fork failed\n");
     case 0:
-        if (execl("/usr/local/bin/filebrowser", "filebrowser", "-p", "8282", (char *) NULL)) {
+        if (execl("/usr/local/bin/filebrowser", "filebrowser", "-p", "8283", (char *) NULL)) {
             printf("execfailed\n");
         }
         break;

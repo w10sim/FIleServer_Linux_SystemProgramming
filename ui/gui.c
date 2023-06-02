@@ -19,7 +19,7 @@ int create_gui()
     case -1:
         printf("fork failed\n");
     case 0:
-        if (execl("/usr/bin/firefox", "firefox", "http://localhost:8283", NULL)) {
+        if (execl("/usr/bin/google-chrome", "chrome", "http://localhost:8282", NULL)) {
             printf("execfailed\n");
         }
         break;

@@ -29,7 +29,6 @@ sigchldHandler(int sig)
     errno = savedErrno;
 }
 
-
 int main()
 {
     pid_t spid, gpid, ipid, wpid;

@@ -14,6 +14,7 @@ int create_gui()
     sleep(3);
     /* fork + exec 를 이용하세요 */
     /* exec으로 google-chrome-stable을 실행 하세요. */
+
     switch (systemPid = fork()) {
     case -1:
         printf("fork failed\n");
@@ -25,6 +26,6 @@ int create_gui()
     default:
         break;
     }
-    
+
     return 0;
 }

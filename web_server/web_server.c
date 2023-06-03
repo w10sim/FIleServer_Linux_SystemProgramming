@@ -12,7 +12,8 @@ int create_web_server()
     printf("여기서 Web Server 프로세스를 생성합니다.\n");
 
     /* fork + exec 를 이용하세요 */
-    /* exec으로 filebrowser을 실행 하세요. */
+    /* exec으로 google-chrome-stable을 실행 하세요. */
+
     switch (systemPid = fork()) {
     case -1:
         printf("fork failed\n");
@@ -24,5 +25,6 @@ int create_web_server()
     default:
         break;
     }
+
     return 0;
 }

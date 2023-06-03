@@ -15,7 +15,7 @@ static int toy_timer = 0;
 
 static void timer_expire_signal_handler()
 {
-    printf("timer_expire_signal_handler: %d\n", toy_timer);
+    // 이거 뮤텍스로 막아야 하나요?
     toy_timer++;
 }
 
@@ -39,6 +39,58 @@ int posix_sleep_ms(unsigned int timeout_ms)
     return nanosleep(&sleep_time, NULL);
 }
 
+void *watchdog_thread(void* arg)
+{
+    char *s = arg;
+
+    printf("%s", s);
+
+    while (1) {
+        posix_sleep_ms(5000);
+    }
+
+    return 0;
+}
+
+void *monitor_thread(void* arg)
+{
+    char *s = arg;
+
+    printf("%s", s);
+
+    while (1) {
+        posix_sleep_ms(5000);
+    }
+
+    return 0;
+}
+
+void *disk_service_thread(void* arg)
+{
+    char *s = arg;
+
+    printf("%s", s);
+
+    while (1) {
+        posix_sleep_ms(5000);
+    }
+
+    return 0;
+}
+
+void *camera_service_thread(void* arg)
+{
+    char *s = arg;
+
+    printf("%s", s);
+
+    while (1) {
+        posix_sleep_ms(5000);
+    }
+
+    return 0;
+}
+
 int system_server()
 {
     struct itimerspec ts;
@@ -55,13 +107,23 @@ int system_server()
     /* 5초 타이머 등록 */
     set_periodic_timer(5, 0);
 
-    /* watchdog, monitor, disk_service, camera_service 스레드를 생성한다. */
+    /* 스레드를 생성한다. */
+    retcode = pthread_create(&watchdog_thread_tid, NULL, watchdog_thread, "watchdog thread\n");
+    assert(retcode == 0);
+    retcode = pthread_create(&monitor_thread_tid, NULL, monitor_thread, "monitor thread\n");
+    assert(retcode == 0);
+    retcode = pthread_create(&disk_service_thread_tid, NULL, disk_service_thread, "disk service thread\n");
+    assert(retcode == 0);
+    retcode = pthread_create(&camera_service_thread_tid, NULL, camera_service_thread, "camera service thread\n");
+    assert(retcode == 0);
 
     printf("system init done.  waiting...");
+    /* 1초 마다 wake-up 한다 */
     while (1) {
         sleep(1);
     }
-
+   
+    printf("<== system\n");
     return 0;
 }
 

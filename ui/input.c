@@ -1,4 +1,3 @@
-
 #include <assert.h>
 #include <pthread.h>
 #include <sys/prctl.h>
@@ -20,6 +19,7 @@
 
 #define TOY_TOK_BUFSIZE 64
 #define TOY_TOK_DELIM " \t\r\n\a"
+#define TOY_BUFFSIZE 1024
 
 typedef struct _sig_ucontext {
     unsigned long uc_flags;
@@ -28,6 +28,11 @@ typedef struct _sig_ucontext {
     struct sigcontext uc_mcontext;
     sigset_t uc_sigmask;
 } sig_ucontext_t;
+
+static pthread_mutex_t global_message_mutex  = PTHREAD_MUTEX_INITIALIZER;
+
+// global_message <~ 모든 문제를 만드는 전역 변수
+static char global_message[TOY_BUFFSIZE];
 
 void segfault_handler(int sig_num, siginfo_t * info, void * ucontext) {
   void * array[50];
@@ -69,11 +74,22 @@ void segfault_handler(int sig_num, siginfo_t * info, void * ucontext) {
  */
 void *sensor_thread(void* arg)
 {
+    char saved_message[TOY_BUFFSIZE];
     char *s = arg;
+    int i = 0;
 
     printf("%s", s);
 
     while (1) {
+        i = 0;
+        // 여기서 뮤텍스
+        // 과제를 억지로 만들기 위해 한 글자씩 출력 후 슬립
+        while (global_message[i] != NULL) {
+            printf("%c", global_message[i]);
+            fflush(stdout);
+            posix_sleep_ms(500);
+            i++;
+        }
         posix_sleep_ms(5000);
     }
 
@@ -85,17 +101,20 @@ void *sensor_thread(void* arg)
  */
 
 int toy_send(char **args);
+int toy_mutex(char **args);
 int toy_shell(char **args);
 int toy_exit(char **args);
 
 char *builtin_str[] = {
     "send",
+    "mu",
     "sh",
     "exit"
 };
 
 int (*builtin_func[]) (char **) = {
     &toy_send,
+    &toy_mutex,
     &toy_shell,
     &toy_exit
 };
@@ -109,6 +128,18 @@ int toy_send(char **args)
 {
     printf("send message: %s\n", args[1]);
 
+    return 1;
+}
+
+int toy_mutex(char **args)
+{
+    if (args[1] == NULL) {
+        return 1;
+    }
+
+    printf("save message: %s\n", args[1]);
+    // 여기서 뮤텍스
+    strcpy(global_message, args[1]);
     return 1;
 }
 
@@ -130,10 +161,8 @@ int toy_shell(char **args)
         exit(EXIT_FAILURE);
     } else if (pid < 0) {
         perror("toy");
-    } else
-{
-        do
-        {
+    } else {
+        do {
             waitpid(pid, &status, WUNTRACED);
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
     }
@@ -214,11 +243,11 @@ void toy_loop(void)
     int status;
 
     do {
+        // 여기는 그냥 중간에 "TOY>"가 출력되는거 보기 싫어서.. 뮤텍스
         printf("TOY>");
         line = toy_read_line();
         args = toy_split_line(line);
         status = toy_execute(args);
-
         free(line);
         free(args);
     } while (status);
@@ -252,6 +281,10 @@ int input()
     sigaction(SIGSEGV, &sa, NULL); /* ignore whether it works or not */
 
    /* 여기서 스레드를 생성한다. */
+    retcode = pthread_create(&command_thread_tid, NULL, command_thread, "command thread\n");
+    assert(retcode == 0);
+    retcode = pthread_create(&sensor_thread_tid, NULL, sensor_thread, "sensor thread\n");
+    assert(retcode == 0);
 
     while (1) {
         sleep(1);
